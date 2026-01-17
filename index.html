@@ -409,6 +409,7 @@
             background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.02) 100%);
             opacity: 0;
             transition: opacity 0.4s;
+            pointer-events: none;
         }
 
         .part-card:hover {
@@ -456,6 +457,8 @@
 
         .part-chapters {
             list-style: none;
+            position: relative;
+            z-index: 1;
         }
 
         .part-chapters li {
