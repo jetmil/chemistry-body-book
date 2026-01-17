@@ -781,9 +781,9 @@
 
     <!-- Navigation -->
     <nav>
-        <a href="#" class="nav-logo" onclick="showHero()">ХИМИЯ ТЕЛА</a>
+        <a href="#" class="nav-logo" onclick="showHero(); return false;">ХИМИЯ ТЕЛА</a>
         <div class="nav-links">
-            <a href="#toc" onclick="showToc()">Оглавление</a>
+            <a href="#toc" onclick="showToc(); return false;">Оглавление</a>
             <a href="#about">О книге</a>
         </div>
     </nav>
@@ -801,7 +801,7 @@
             От молекул до метаболизма — понятным языком.
         </p>
         <div class="hero-cta">
-            <a href="#toc" class="btn btn-primary" onclick="showToc()">
+            <a href="#toc" class="btn btn-primary" onclick="showToc(); return false;">
                 Начать читать
             </a>
             <a href="#about" class="btn btn-secondary">
@@ -945,8 +945,10 @@
                 const response = await fetch('book.json');
                 const data = await response.json();
                 chapters = data.chapters;
+                return true;
             } catch (e) {
                 console.error('Failed to load book:', e);
+                return false;
             }
         }
 
@@ -954,6 +956,7 @@
             document.getElementById('hero').style.display = 'flex';
             document.getElementById('toc').style.display = 'none';
             document.getElementById('reader').classList.remove('active');
+            history.pushState(null, '', window.location.pathname);
             window.scrollTo(0, 0);
         }
 
@@ -961,13 +964,15 @@
             document.getElementById('hero').style.display = 'none';
             document.getElementById('toc').style.display = 'block';
             document.getElementById('reader').classList.remove('active');
+            history.pushState(null, '', '#toc');
             window.scrollTo(0, 0);
             animateFadeIn();
         }
 
         function openChapter(index) {
-            if (!chapters[index]) {
-                alert('Глава в разработке');
+            if (!chapters || !chapters[index]) {
+                // Book not loaded yet, wait and retry
+                setTimeout(() => openChapter(index), 100);
                 return;
             }
             currentChapter = index;
@@ -984,6 +989,9 @@
 
             document.getElementById('prevBtn').disabled = index === 0;
             document.getElementById('nextBtn').disabled = index === chapters.length - 1;
+
+            // Update URL hash without reloading
+            history.pushState(null, '', `#chapter-${index + 1}`);
 
             window.scrollTo(0, 0);
         }
@@ -1032,8 +1040,26 @@
 
         document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
+        // Handle URL hash on load
+        function handleHash() {
+            const hash = window.location.hash;
+            if (hash === '#toc') {
+                showToc();
+            } else if (hash.startsWith('#chapter-')) {
+                const chapterNum = parseInt(hash.replace('#chapter-', ''));
+                if (!isNaN(chapterNum) && chapterNum >= 1 && chapterNum <= 30) {
+                    openChapter(chapterNum - 1);
+                }
+            }
+        }
+
+        // Listen for hash changes
+        window.addEventListener('hashchange', handleHash);
+
         // Init
-        loadBook();
+        loadBook().then(() => {
+            handleHash();
+        });
     </script>
 </body>
 </html>
